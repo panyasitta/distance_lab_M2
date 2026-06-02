@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>กิจกรรม 4.2 ระยะทางและการกระจัด (Interactive Lab)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+        canvas { touch-action: none; }
+        .tab-btn { transition: all 0.2s; }
+        .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; font-weight: 700; background-color: #eff6ff; }
+        .quiz-textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0.75rem; font-size: 0.875rem; resize: vertical; min-height: 80px; }
+        .quiz-textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .feedback-box { margin-top: 0.5rem; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; display: none; line-height: 1.5; }
+        .feedback-box.show { display: block; animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="p-3 md:p-6 text-gray-800">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-5 text-center md:text-left flex flex-col md:flex-row md:items-center justify-between border-b pb-4 gap-2">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-blue-900">กิจกรรมที่ 4.2 (โหมด Interactive)</h1>
+                <h2 class="text-base md:text-lg text-gray-600">ระยะทางและระยะห่างระหว่างสองตำแหน่งแตกต่างกันอย่างไร</h2>
+            </div>
+            <div class="bg-blue-100 border border-blue-200 px-4 py-2 rounded-lg text-left shadow-sm">
+                <div class="text-xs text-blue-800 font-bold">📏 มาตราส่วนแผนที่จริง:</div>
+                <div class="text-sm text-blue-950 font-semibold">1 ช่องตาราง = 1 เซนติเมตร = 10 เมตร</div>
+                <div class="text-xs text-red-600 mt-0.5">* A➔B = 20 ม. | A➔C = 50 ม. | C➔D = 50 ม.</div>
+            </div>
+        </header>
+
+        <div class="flex border-b border-gray-200 mb-6 bg-white rounded-t-xl overflow-hidden shadow-sm flex-col md:flex-row">
+            <button onclick="switchTab('demo')" id="tab-demo" class="tab-btn active flex-1 py-3 px-2 text-center border-b-4 border-transparent hover:text-blue-600 font-medium text-sm md:text-base">
+                📺 1. โหมดแอนิเมชันสาธิต
+            </button>
+            <button onclick="switchTab('draw')" id="tab-draw" class="tab-btn flex-1 py-3 px-2 text-center border-b-4 border-transparent hover:text-blue-600 font-medium text-sm md:text-base border-l border-gray-100">
+                ✏️ 2. โหมดกระดานลงมือวาดเอง
+            </button>
+            <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn flex-1 py-3 px-2 text-center border-b-4 border-transparent hover:text-blue-600 font-medium text-sm md:text-base border-l border-gray-100 bg-amber-50/30">
+                📝 3. คำถามท้ายกิจกรรม (AI ตรวจ)
+            </button>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-6">
+            
+            <div class="flex-1 flex flex-col gap-4">
+                <div class="bg-white p-3 md:p-5 rounded-2xl shadow-lg border border-gray-100 flex flex-col items-center">
+                    <div class="relative w-full overflow-x-auto flex justify-center">
+                        <canvas id="simCanvas" width="600" height="480" class="bg-gray-50 rounded-xl shadow-inner border border-gray-200"></canvas>
+                    </div>
+                    <div class="w-full flex justify-between items-center mt-3 text-xs text-gray-500">
+                        <div>📍 ระบบดูดติดพิกัด (Snap) อัตโนมัติเมื่อเข้าใกล้จุดจำลอง</div>
+                        <div id="coordinate-tracker" class="font-mono bg-gray-100 px-2 py-0.5 rounded">พิกัดเมาส์: -</div>
+                    </div>
+                </div>
+
+                <div id="visual-legend" class="bg-white p-4 rounded-xl shadow border border-gray-100">
+                    <h3 class="font-bold text-sm text-gray-700 mb-3 flex items-center gap-2">
+                        📐 สัญลักษณ์เส้นทางฟิสิกส์ที่แสดงในกระดาน
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center gap-4 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                            <canvas id="legendDistance" width="100" height="40" class="bg-gray-100 rounded border border-gray-200 shrink-0"></canvas>
+                            <div>
+                                <h4 class="font-bold text-sm text-blue-900">ระยะทาง (Distance)</h4>
+                                <p class="text-xs text-gray-600 mt-0.5">เส้นทึบสีน้ำเงินลากเลี้ยวไปตามแนวทางเดินจริงของวัตถุ</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 bg-red-50/50 p-3 rounded-lg border border-red-100">
+                            <canvas id="legendDisplacement" width="100" height="40" class="bg-gray-100 rounded border border-gray-200 shrink-0"></canvas>
+                            <div>
+                                <h4 class="font-bold text-sm text-red-900">การกระจัด (Displacement)</h4>
+                                <p class="text-xs text-gray-600 mt-0.5">เส้นประสีแดงเวกเตอร์หัวลูกศร พุ่งตรงจากจุดเริ่มถึงจุดสุดท้าย</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-[420px] flex flex-col gap-4 relative min-h-[600px]">
+                
+                <div id="panel-demo" class="bg-white p-4 rounded-xl shadow border border-gray-100 flex flex-col gap-3 absolute inset-0 overflow-y-auto">
+                    <div class="flex items-center justify-between border-b pb-2">
+                        <h3 class="font-bold text-lg text-gray-800">เลือกสถานการณ์คำถาม (ข้อ 2)</h3>
+                        <button onclick="resetDemoAnimation()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1 rounded-lg text-xs font-bold transition">🔄 รีเซ็ต</button>
+                    </div>
+
+                    <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                        <span class="text-xs font-bold text-gray-600 block mb-1.5 flex items-center gap-1">⏩ ความเร็วการเล่นแอนิเมชัน:</span>
+                        <div class="grid grid-cols-5 gap-1" id="speed-controls">
+                            <button onclick="setPlaySpeed(0.25)" id="speed-0.25" class="speed-btn py-1 text-xs border rounded-lg font-bold bg-white text-gray-700">0.25x</button>
+                            <button onclick="setPlaySpeed(0.5)" id="speed-0.5" class="speed-btn py-1 text-xs border rounded-lg font-bold bg-white text-gray-700">0.5x</button>
+                            <button onclick="setPlaySpeed(1.0)" id="speed-1.0" class="speed-btn py-1 text-xs border border-blue-600 rounded-lg font-bold bg-blue-600 text-white shadow-sm">1.0x</button>
+                            <button onclick="setPlaySpeed(1.5)" id="speed-1.5" class="speed-btn py-1 text-xs border rounded-lg font-bold bg-white text-gray-700">1.5x</button>
+                            <button onclick="setPlaySpeed(2.0)" id="speed-2.0" class="speed-btn py-1 text-xs border rounded-lg font-bold bg-white text-gray-700">2.0x</button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <button onclick="playScenario(1)" id="btn-scen-1" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition"><span class="font-bold text-blue-700">2.1</span> เดินทางจาก A ไปยัง B (20 เมตร)</button>
+                        <button onclick="playScenario(2)" id="btn-scen-2" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition"><span class="font-bold text-blue-700">2.2</span> เดินทางจาก A ไป C แล้วย้อนกลับมา B</button>
+                        <button onclick="playScenario(3)" id="btn-scen-3" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition"><span class="font-bold text-blue-700">2.3</span> เดินทางจาก A ไป C แล้วไปโรงเรียน D</button>
+                        <button onclick="playScenario(4)" id="btn-scen-4" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition"><span class="font-bold text-blue-700">2.4</span> เดินลัดสนามหญ้าจาก A ไป D โดยตรง</button>
+                        <button onclick="playScenario(5)" id="btn-scen-5" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition"><span class="font-bold text-blue-700">2.5</span> เดินรอบบล็อกตึกแล้วกลับมาที่จุด A</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <div class="bg-blue-50 border border-blue-100 p-2 rounded-lg text-center">
+                            <div class="text-xs font-bold text-blue-700">ระยะทาง (s)</div>
+                            <div class="text-xl font-bold text-blue-900 mt-1" id="dist-display">0.0 <span class="text-xs font-normal">ม.</span></div>
+                        </div>
+                        <div class="bg-red-50 border border-red-100 p-2 rounded-lg text-center">
+                            <div class="text-xs font-bold text-red-700">การกระจัด (s⃗)</div>
+                            <div class="text-xl font-bold text-red-900 mt-1" id="disp-display">0.0 <span class="text-xs font-normal">ม.</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 mt-auto">
+                        <h4 class="font-bold text-amber-950 text-sm mb-1">🧠 ผลการวิเคราะห์เชิงฟิสิกส์</h4>
+                        <p id="analysis-box" class="text-xs text-amber-900 leading-relaxed">เลือกคำถามด้านบนเพื่อรันตัวจำลองเส้นทางและดูคำอธิบายวิเคราะห์ผลลัพธ์...</p>
+                    </div>
+                </div>
+
+                <div id="panel-draw" class="bg-white p-4 rounded-xl shadow border border-gray-100 flex flex-col gap-3 hidden absolute inset-0 overflow-y-auto">
+                    <div class="flex items-center justify-between border-b pb-2">
+                        <h3 class="font-bold text-lg text-gray-800">ฝึกวาดและทดลองด้วยตนเอง</h3>
+                        <button onclick="resetDrawing()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1 rounded-lg text-xs font-bold transition">🗑️ ล้างกระดาน</button>
+                    </div>
+                    
+                    <div class="flex flex-col gap-2">
+                        <button id="tool-dist" onclick="setDrawingTool('distance')" class="tool-btn flex items-center gap-3 p-3 border-2 rounded-xl text-left bg-blue-50 border-blue-500">
+                            <div class="w-4 h-4 rounded-full bg-blue-600 shrink-0"></div>
+                            <div>
+                                <div class="font-bold text-blue-800 text-sm">เครื่องมือ: วาดระยะทาง (ตามเส้นทางจริง)</div>
+                                <div class="text-xs text-gray-500">คลิกหรือแตะจุดต่อจุดบนแผนที่เพื่อจำลองการเดินเลี้ยว</div>
+                            </div>
+                        </button>
+                        
+                        <button id="tool-disp" onclick="setDrawingTool('displacement')" class="tool-btn flex items-center gap-3 p-3 border-2 rounded-xl text-left border-gray-200">
+                            <div class="w-4 h-4 rounded-full bg-red-600 shrink-0"></div>
+                            <div>
+                                <div class="font-bold text-red-800 text-sm">เครื่องมือ: วาดการกระจัด (เวกเตอร์ตรง)</div>
+                                <div class="text-xs text-gray-500">คลิกจุดเริ่มต้น 1 ครั้ง และคลิกจุดสุดท้าย 1 ครั้งเพื่อลากเวกเตอร์</div>
+                            </div>
+                        </button>
+                    </div>
+
+                    <button onclick="undoLastPoint()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg text-xs transition mt-1">↩️ ย้อนกลับจุดล่าสุด</button>
+
+                    <div class="grid grid-cols-2 gap-2 mt-auto">
+                        <div class="bg-blue-50 border border-blue-100 p-2 rounded-lg text-center">
+                            <div class="text-xs font-bold text-blue-700">ระยะทางที่คุณวาด (s)</div>
+                            <div class="text-xl font-bold text-blue-900 mt-1" id="draw-dist-display">0.0 <span class="text-xs font-normal">ม.</span></div>
+                        </div>
+                        <div class="bg-red-50 border border-red-100 p-2 rounded-lg text-center">
+                            <div class="text-xs font-bold text-red-700">การกระจัดที่คุณวาด (s⃗)</div>
+                            <div class="text-xl font-bold text-red-900 mt-1" id="draw-disp-display">0.0 <span class="text-xs font-normal">ม.</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="panel-quiz" class="bg-amber-50 p-4 rounded-xl shadow border border-amber-200 flex flex-col gap-4 hidden absolute inset-0 overflow-y-auto">
+                    <div class="border-b border-amber-200 pb-2 flex items-center gap-2">
+                        <span class="text-2xl">🤖</span>
+                        <h3 class="font-bold text-lg text-amber-900">ผู้ช่วย AI ตรวจคำตอบประจำแล็บ</h3>
+                    </div>
+                    
+                    <div class="text-xs text-amber-700 bg-white p-2 rounded border border-amber-100">
+                        ให้นักเรียนพิมพ์อธิบายคำตอบจากกิจกรรมที่ทำลงในช่องด้านล่าง แล้วกดปุ่มส่งตรวจ หากระบบตรวจสอบพบว่าคีย์เวิร์ดและประเด็นการคิดวิเคราะห์ถูกต้องสมบูรณ์ ระบบจะเปิดบล็อกเฉลยและสรุปสาระสำคัญให้นักเรียนได้จดบันทึกลงสมุดทันที
+                    </div>
+
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800 mb-1">1. จากสถานการณ์ที่กำหนดให้ (2.1 - 2.5) สถานการณ์ใดบ้างที่ระยะทางและการกระจัดมีค่าเท่ากัน? เพราะเหตุใด?</p>
+                            <textarea id="ans1" class="quiz-textarea" placeholder="ตัวอย่างการตอบ: ข้อ 2.x และ 2.y เท่ากัน เพราะว่า..."></textarea>
+                            <div id="fb1" class="feedback-box"></div>
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm font-bold text-gray-800 mb-1">2. สถานการณ์ใดบ้างที่ระยะทางและการกระจัดมีค่าไม่เท่ากัน? เพราะเหตุใด?</p>
+                            <textarea id="ans2" class="quiz-textarea" placeholder="พิมพ์อธิบายเหตุผลและระบุเลขสถานการณ์ให้ครบถ้วน..."></textarea>
+                            <div id="fb2" class="feedback-box"></div>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-bold text-gray-800 mb-1">3. สรุปแล้ว "ระยะทาง" และ "การกระจัด" มีความแตกต่างกันอย่างไร?</p>
+                            <textarea id="ans3" class="quiz-textarea" placeholder="สรุปใจความสำคัญของนิยามทั้งสองคำแฝงปริมาณสเกลาร์/เวกเตอร์..."></textarea>
+                            <div id="fb3" class="feedback-box"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="evaluateAnswers()" class="mt-auto w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
+                        <span>✨</span> ตรวจคำตอบวิเคราะห์ประเด็นด้วย AI
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p class="font-medium text-gray-600">© 2026 พัฒนาซอฟต์แวร์จำลองแล็บฟิสิกส์อ้างอิงหลักสูตร สสวท. — โรงเรียนทุ่งเสลี่ยมชนูปถัมภ์</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- ส่วนที่ 1: ตั้งค่าระบบแผนที่ พิกัด และมาตราส่วนตัวแปรหลัก ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 45; // 1 ช่องตารางบนหน้าจอมีขนาดเท่ากับ 45 พิกเซล
+        const scaleMeters = 10; // 1 ช่อง มีค่าเท่ากับ 10 เมตรในโลกความจริง
+        const originX = 150; // กำหนดจุดเริ่มพิกัดแกน X บนระนาบวาด
+        const originY = 380; // กำหนดจุดเริ่มพิกัดแกน Y บนระนาบวาด
+
+        // พิกัดจุด Landmark ต่างๆ บน Grid แผนที่
+        const locations = {
+            A: { x: 0, y: 0, label: "A", emoji: "🚶‍♂️" },
+            B: { x: 2, y: 0, label: "B", emoji: "📮" },
+            C: { x: 5, y: 0, label: "C", emoji: "🚌" },
+            D: { x: 5, y: 5, label: "D", emoji: "🏫" },
+            E: { x: 0, y: 5, label: "E", emoji: "🚦" }
+        };
+
+        // สถานะของแอพพลิเคชัน
+        let activeTab = 'demo'; 
+        let playbackSpeed = 1.0; 
+        
+        // ตัวแปรควบคุมระบบแอนิเมชันสาธิต (Demo)
+        let animProgress = 0;
+        let animFrameId = null;
+        let animSegments = [];
+        let animTotalUnits = 0;
+
+        // ตัวแปรควบคุมระบบวาด (Draw)
+        let currentDrawTool = 'distance'; 
+        let userDistancePoints = []; 
+        let userDisplacement = { start: null, end: null }; 
+
+        // ข้อมูลสคริปต์วิเคราะห์คำตอบโจทย์ข้อ 2.1 - 2.5
+        const scenarios = {
+            1: { path: [locations.A, locations.B], desc: "<b>วิเคราะห์ผล (2.1):</b> เดินเป็นเส้นตรงจาก A ไปทิศตะวันออกถึงจุด B ระยะทางเท่ากับ 20 เมตร และความยาวเส้นตรงที่เชื่อมจุดแรกถึงจุดท้าย (การกระจัด) ก็เท่ากับ 20 เมตรเช่นกัน เนื่องจากเคลื่อนที่เป็นเส้นตรงโดยไม่เปลี่ยนทิศทางเลย" },
+            2: { path: [locations.A, locations.C, locations.B], desc: "<b>วิเคราะห์ผล (2.2):</b> เดินไปทางตะวันออกจนถึงจุด C (50 เมตร) แล้วเดินย้อนกลับมาทางตะวันตกถึงจุด B (30 เมตร) <br>• ระยะทางทั้งหมด = 50 + 30 = 80 เมตร<br>• การกระจัดลากตรงจากเริ่ม (A) ไปจบ (B) = 20 เมตร ทิศตะวันออก (ค่าไม่เท่ากันเพราะย้อนกลับ)" },
+            3: { path: [locations.A, locations.C, locations.D], desc: "<b>วิเคราะห์ผล (2.3):</b> เดินตามถนนไปทางตะวันออกถึงจุด C (50 เมตร) แล้วเลี้ยวขึ้นเหนือไปโรงเรียนจุด D (50 เมตร)<br>• ระยะทางทั้งหมด = 50 + 50 = 100 เมตร<br>• การกระจัดวัดตามแนวเส้นทแยงมุมตรงดิ่งพุ่งจาก A ➔ D มีขนาดประมาณ 70.7 เมตร ทิศตะวันออกเฉียงเหนือ" },
+            4: { path: [locations.A, locations.D], desc: "<b>วิเคราะห์ผล (2.4):</b> เดินลัดสนามหญ้าตัดตรงจากต้นทาง A มุ่งตรงไปยังโรงเรียนจุด D ทันที เส้นทางเดินจริงเป็นเส้นตรงผ่ากลางสนาม ทำให้ระยะทางมีค่าเท่ากับการกระจัดพอดี คือประมาณ 70.7 เมตร" },
+            5: { path: [locations.A, locations.B, locations.C, locations.D, locations.E, locations.A], desc: "<b>วิเคราะห์ผล (2.5):</b> เดินอ้อมตามบล็อกถนนสี่เหลี่ยมรอบสนามหญ้า ผ่านตู้ไปรษณีย์ ที่จอดรถ โรงเรียน ไฟแดง แล้ววนกลับมาถึงบ้านจุด A ตามเดิม<br>• ระยะทางรอบตึกรวม = 200 เมตร<br>• การกระจัด = 0 เมตร! เนื่องจากจุดสุดท้ายวนกลับมาซ้อนทับอยู่ที่จุดเริ่มต้นพอดีเป๊ะ" }
+        };
+
+        function getScreenX(gridX) { return originX + gridX * gridSize; }
+        function getScreenY(gridY) { return originY - gridY * gridSize; } 
+
+        // --- ส่วนที่ 2: ระบบบริหารจัดการสลับแท็บการทำงานหน้าเว็บ ---
+        function switchTab(tab) {
+            activeTab = tab;
+            ['demo', 'draw', 'quiz'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.remove('active', 'bg-white');
+                document.getElementById(`panel-${t}`).classList.add('hidden');
+            });
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            activeBtn.classList.add('active', 'bg-white');
+            if(tab === 'quiz') activeBtn.classList.remove('bg-amber-50/30'); 
+            
+            document.getElementById(`panel-${tab}`).classList.remove('hidden');
+            
+            stopAnimation();
+            if(tab === 'demo') {
+                document.getElementById('visual-legend').style.display = 'block';
+                playScenario(1);
+            } else if (tab === 'draw') {
+                document.getElementById('visual-legend').style.display = 'block';
+                resetDrawing();
+            } else if (tab === 'quiz') {
+                document.getElementById('visual-legend').style.display = 'none';
+                drawSimulationMap();
+            }
+        }
+
+        // --- ส่วนที่ 3: ระบบเรนเดอร์กราฟิกแผนที่เมืองจำลองลงบน Canvas ---
+        function drawSimulationMap() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // วาดตารางกริดจำลองสมุดกราฟแล็บฟิสิกส์
+            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+            for (let x = originX - 3 * gridSize; x <= canvas.width; x += gridSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+            for (let y = originY + 2 * gridSize; y >= 0; y -= gridSize) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+            ctx.setLineDash([]);
+            
+            // วาดเข็มทิศบอกตำแหน่งทิศทาง นอร์ท-เซาท์-อีสต์-เวสต์
+            drawCompassSymbol(60, 60);
+            
+            // วาดภาพพื้นผิวถนนสีเทาเข้มเชื่อมต่อกันรอบบล็อกสนามหญ้า
+            ctx.fillStyle = '#64748b'; const roadThick = 40;
+            ctx.fillRect(getScreenX(0) - roadThick/2, getScreenY(0) - roadThick/2, 6 * gridSize, roadThick);
+            ctx.fillRect(getScreenX(0) - roadThick/2, getScreenY(5) - roadThick/2, 6 * gridSize, roadThick);
+            ctx.fillRect(getScreenX(0) - roadThick/2, getScreenY(5) - roadThick/2, roadThick, 5 * gridSize + roadThick);
+            ctx.fillRect(getScreenX(5) - roadThick/2, getScreenY(5) - roadThick/2, roadThick, 5 * gridSize + roadThick);
+            
+            // วาดมิติทางม้าลายเพื่อความสมจริง
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < 6; i++) {
+                ctx.fillRect(getScreenX(0) + 18, getScreenY(5) + (i * 7) - 18, 15, 3.5);
+                ctx.fillRect(getScreenX(0) + (i * 7) - 18, getScreenY(5) + 18, 3.5, 15);
+            }
+            
+            // วาดบล็อกพื้นหลังพื้นที่สนามหญ้าใจกลางเมือง
+            ctx.fillStyle = '#a3e635'; 
+            ctx.fillRect(getScreenX(0) + roadThick/2, getScreenY(5) + roadThick/2, 5 * gridSize - roadThick, 5 * gridSize - roadThick);
+            ctx.fillStyle = '#14532d'; ctx.font = 'bold 20px Sarabun'; ctx.textAlign = 'center'; ctx.fillText('สนามหญ้า', getScreenX(2.5), getScreenY(2.2));
+            
+            // วาดหมุดสถานการณ์และข้อความ Emoji ตัวแทนสิ่งก่อสร้าง
+            Object.values(locations).forEach(pt => {
+                const px = getScreenX(pt.x), py = getScreenY(pt.y);
+                ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#1e293b'; ctx.font = 'bold 18px Arial'; ctx.textAlign = 'center'; ctx.fillText(pt.label, px, py + 24);
+                ctx.font = '26px Arial';
+                let offset = { x: 0, y: -16 };
+                if (pt.label === 'A') offset = { x: -32, y: 10 };
+                if (pt.label === 'C') offset = { x: 34, y: 10 };
+                if (pt.label === 'D') offset = { x: 38, y: -16 };
+                if (pt.label === 'E') offset = { x: -28, y: -18 };
+                ctx.fillText(pt.emoji, px + offset.x, py + offset.y);
+            });
+        }
+
+        function drawCompassSymbol(cx, cy) {
+            ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(cx, cy, 24, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, cy - 28); ctx.lineTo(cx, cy + 28); ctx.moveTo(cx - 28, cy); ctx.lineTo(cx + 28, cy); ctx.stroke();
+            ctx.fillStyle = '#1e293b'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center';
+            ctx.fillText('N', cx, cy - 30); ctx.fillText('S', cx, cy + 38); ctx.fillText('E', cx + 36, cy + 4); ctx.fillText('W', cx - 36, cy + 4);
+        }
+
+        function drawVectorArrow(fromX, fromY, toX, toY, color) {
+            const dx = toX - fromX, dy = toY - fromY;
+            if (Math.hypot(dx, dy) < 5) return; 
+            const angle = Math.atan2(dy, dx), headlen = 14; 
+            ctx.save(); ctx.beginPath(); ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath(); ctx.fillStyle = color; ctx.fill(); ctx.restore();
+        }
+
+        // --- ส่วนที่ 4: กลไกและตรรกะในโหมดแอนิเมชันสาธิต (Demo) ---
+        function setPlaySpeed(speed) {
+            playbackSpeed = speed;
+            document.querySelectorAll('.speed-btn').forEach(btn => btn.className = "speed-btn py-1 text-xs border rounded-lg font-bold bg-white text-gray-700");
+            document.getElementById(`speed-${speed}`).className = "speed-btn py-1 text-xs border border-blue-600 rounded-lg font-bold bg-blue-600 text-white shadow-sm";
+        }
+
+        function stopAnimation() { if(animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; } }
+
+        function playScenario(id) {
+            stopAnimation();
+            document.querySelectorAll('.scen-btn').forEach(btn => btn.className = "scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white");
+            document.getElementById(`btn-scen-${id}`).className = "scen-btn text-left px-4 py-2 border rounded-lg text-sm transition bg-blue-600 text-white font-semibold";
+            const sc = scenarios[id];
+            animProgress = 0; animSegments = []; animTotalUnits = 0;
+            for (let i = 0; i < sc.path.length - 1; i++) {
+                const dist = Math.hypot(sc.path[i+1].x - sc.path[i].x, sc.path[i+1].y - sc.path[i].y);
+                animSegments.push({ p1: sc.path[i], p2: sc.path[i+1], length: dist, startUnit: animTotalUnits, endUnit: animTotalUnits + dist });
+                animTotalUnits += dist;
+            }
+            document.getElementById('analysis-box').innerHTML = sc.desc;
+            animateDemo();
+        }
+
+        function animateDemo() {
+            animProgress += 0.012 * playbackSpeed; 
+            if (animProgress > 1) animProgress = 1;
+            drawSimulationMap();
+            
+            const currentUnits = animProgress * animTotalUnits;
+            let cx = animSegments[0].p1.x, cy = animSegments[0].p1.y;
+
+            // วาดและคำนวณเส้นระยะทางเคลื่อนที่จริง (สีน้ำเงิน)
+            ctx.beginPath(); ctx.moveTo(getScreenX(animSegments[0].p1.x), getScreenY(animSegments[0].p1.y));
+            ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            for (let seg of animSegments) {
+                if (currentUnits >= seg.endUnit) {
+                    ctx.lineTo(getScreenX(seg.p2.x), getScreenY(seg.p2.y)); cx = seg.p2.x; cy = seg.p2.y;
+                } else if (currentUnits > seg.startUnit) {
+                    const ratio = (currentUnits - seg.startUnit) / seg.length;
+                    cx = seg.p1.x + (seg.p2.x - seg.p1.x) * ratio; cy = seg.p1.y + (seg.p2.y - seg.p1.y) * ratio;
+                    ctx.lineTo(getScreenX(cx), getScreenY(cy)); break;
+                }
+            }
+            ctx.stroke();
+
+            // วาดเวกเตอร์ลูกศรการกระจัดลากตรงดิ่งจากจุดเริ่มต้นต้นสายเสมอ (สีแดงประ)
+            const startNode = animSegments[0].p1;
+            ctx.beginPath(); ctx.moveTo(getScreenX(startNode.x), getScreenY(startNode.y)); ctx.lineTo(getScreenX(cx), getScreenY(cy));
+            ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2.5; ctx.setLineDash([6, 5]); ctx.stroke(); ctx.setLineDash([]);
+            drawVectorArrow(getScreenX(startNode.x), getScreenY(startNode.y), getScreenX(cx), getScreenY(cy), '#dc2626');
+
+            // วาดตัวตุ๊กตาวิ่งแทนตำแหน่งคนกิตติขณะเคลื่อนที่
+            ctx.fillStyle = '#f59e0b'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath();
+            ctx.arc(getScreenX(cx), getScreenY(cy), 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+            // แสดงรายงานตัวเลขวัดค่าระยะทางและการกระจัด
+            document.getElementById('dist-display').innerHTML = `${(currentUnits * scaleMeters).toFixed(1)} <span class="text-xs font-normal">ม.</span>`;
+            document.getElementById('disp-display').innerHTML = `${(Math.hypot(cx - startNode.x, cy - startNode.y) * scaleMeters).toFixed(1)} <span class="text-xs font-normal">ม.</span>`;
+
+            if (animProgress < 1) animFrameId = requestAnimationFrame(animateDemo);
+        }
+
+        function resetDemoAnimation() {
+            stopAnimation(); drawSimulationMap();
+            document.getElementById('dist-display').innerHTML = `0.0 <span class="text-xs font-normal">ม.</span>`;
+            document.getElementById('disp-display').innerHTML = `0.0 <span class="text-xs font-normal">ม.</span>`;
+            document.getElementById('analysis-box').innerHTML = "รีเซ็ตคลังแอนิเมชันสำเร็จแล้ว กรุณาเลือกเปิดสถานการณ์ด้านบนอีกครั้งครับ";
+            document.querySelectorAll('.scen-btn').forEach(btn => btn.className = "scen-btn text-left px-4 py-2 border rounded-lg text-sm bg-white hover:bg-blue-50 transition");
+        }
+
+        // --- ส่วนที่ 5: กลไกและตรรกะระบบกระดานลากเส้นฝึกวาดด้วยตนเอง (Draw) ---
+        function setDrawingTool(tool) {
+            currentDrawTool = tool;
+            document.getElementById('tool-dist').className = `tool-btn flex items-center gap-3 p-3 border-2 rounded-xl text-left ${tool === 'distance' ? 'bg-blue-50 border-blue-500' : 'border-gray-200 bg-white'}`;
+            document.getElementById('tool-disp').className = `tool-btn flex items-center gap-3 p-3 border-2 rounded-xl text-left ${tool === 'displacement' ? 'bg-red-50 border-red-500' : 'border-gray-200 bg-white'}`;
+        }
+
+        function resetDrawing() {
+            userDistancePoints = []; userDisplacement = { start: null, end: null };
+            document.getElementById('draw-dist-display').innerHTML = `0.0 <span class="text-xs font-normal">ม.</span>`;
+            document.getElementById('draw-disp-display').innerHTML = `0.0 <span class="text-xs font-normal">ม.</span>`;
+            drawSimulationMap();
+        }
+
+        function undoLastPoint() {
+            if (currentDrawTool === 'distance' && userDistancePoints.length > 0) userDistancePoints.pop();
+            else userDisplacement = { start: null, end: null };
+            updateDrawingSimulation();
+        }
+
+        function updateDrawingSimulation() {
+            drawSimulationMap();
+            let dDist = 0, dDisp = 0;
+
+            if (userDistancePoints.length > 0) {
+                ctx.beginPath(); ctx.moveTo(userDistancePoints[0].px, userDistancePoints[0].py);
+                ctx.strokeStyle = 'rgba(37, 99, 235, 0.75)'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                for (let i = 1; i < userDistancePoints.length; i++) {
+                    ctx.lineTo(userDistancePoints[i].px, userDistancePoints[i].py);
+                    dDist += Math.hypot(userDistancePoints[i].gridX - userDistancePoints[i-1].gridX, userDistancePoints[i].gridY - userDistancePoints[i-1].gridY);
+                }
+                ctx.stroke();
+                userDistancePoints.forEach(pt => { ctx.fillStyle = '#1d4ed8'; ctx.beginPath(); ctx.arc(pt.px, pt.py, 4, 0, Math.PI * 2); ctx.fill(); });
+            }
+
+            if (userDisplacement.start) {
+                const s = userDisplacement.start;
+                ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.arc(s.px, s.py, 6, 0, Math.PI * 2); ctx.fill();
+                if (userDisplacement.end) {
+                    const e = userDisplacement.end;
+                    ctx.beginPath(); ctx.moveTo(s.px, s.py); ctx.lineTo(e.px, e.py);
+                    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]); ctx.stroke(); ctx.setLineDash([]);
+                    drawVectorArrow(s.px, s.py, e.px, e.py, '#dc2626');
+                    dDisp = Math.hypot(e.gridX - s.gridX, e.gridY - s.gridY);
+                }
+            }
+
+            document.getElementById('draw-dist-display').innerHTML = `${(dDist * scaleMeters).toFixed(1)} <span class="text-xs font-normal">ม.</span>`;
+            document.getElementById('draw-disp-display').innerHTML = `${(dDisp * scaleMeters).toFixed(1)} <span class="text-xs font-normal">ม.</span>`;
+        }
+
+        // --- ส่วนที่ 6: ระบบดักจับเหตุการณ์การกด/สัมผัส Canvas (Mouse/Touch Event) ---
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const gX = Math.round((e.clientX - rect.left - originX) / gridSize);
+            const gY = Math.round((originY - (e.clientY - rect.top)) / gridSize);
+            document.getElementById('coordinate-tracker').innerText = (gX >= 0 && gX <= 5 && gY >= 0 && gY <= 5) ? `พิกัดปัจจุบัน: (X: ${gX * 10}ม., Y: ${gY * 10}ม.)` : `พิกัดเมาส์: นอกขอบเขต`;
+        });
+
+        canvas.addEventListener('mousedown', (e) => handleCanvasInput(e.clientX, e.clientY));
+        canvas.addEventListener('touchstart', (e) => { if (e.touches.length > 0) { handleCanvasInput(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); } });
+
+        function handleCanvasInput(cX, cY) {
+            if (activeTab !== 'draw') return;
+            const rect = canvas.getBoundingClientRect(), mX = cX - rect.left, mY = cY - rect.top;
+            
+            let snapPt = null;
+            for (let key in locations) {
+                const pt = locations[key], pX = getScreenX(pt.x), pY = getScreenY(pt.y);
+                if (Math.hypot(pX - mX, pY - mY) < 35) { snapPt = { gridX: pt.x, gridY: pt.y, px: pX, py: pY }; break; }
+            }
+            if (!snapPt) {
+                const tX = Math.round((mX - originX) / gridSize), tY = Math.round((originY - mY) / gridSize);
+                if (tX >= 0 && tX <= 6 && tY >= 0 && tY <= 6) snapPt = { gridX: tX, gridY: tY, px: getScreenX(tX), py: getScreenY(tY) };
+            }
+            if (!snapPt) return;
+
+            if (currentDrawTool === 'distance') {
+                if (userDistancePoints.length > 0) {
+                    const l = userDistancePoints[userDistancePoints.length - 1];
+                    if (l.gridX === snapPt.gridX && l.gridY === snapPt.gridY) return;
+                }
+                userDistancePoints.push(snapPt);
+            } else {
+                if (!userDisplacement.start) userDisplacement.start = snapPt;
+                else userDisplacement.end = snapPt;
+            }
+            updateDrawingSimulation();
+        }
+
+        // --- ส่วนที่ 7: ระบบวิเคราะห์และประเมินคำตอบอัจฉริยะ (AI Evaluation) ---
+        function evaluateAnswers() {
+            const a1 = document.getElementById('ans1').value.trim();
+            const a2 = document.getElementById('ans2').value.trim();
+            const a3 = document.getElementById('ans3').value.trim();
+            
+            const fb1 = document.getElementById('fb1');
+            const fb2 = document.getElementById('fb2');
+            const fb3 = document.getElementById('fb3');
+
+            // --- ตรวจข้อที่ 1 ---
+            let hasScenario21 = (a1.includes('2.1') || a1.includes('b'));
+            let hasScenario24 = (a1.includes('2.4') || a1.includes('d') || a1.includes('สนามหญ้า'));
+            const reason1Ok = (a1.includes('เส้นตรง') || a1.includes('ทิศทางเดิม') || a1.includes('ไม่ย้อนกลับ') || a1.includes('ทิศเดียว') || a1.includes('ไม่เปลี่ยนทิศ'));
+            
+            fb1.className = 'feedback-box show';
+            if (a1.length < 5) {
+                fb1.innerHTML = '⚠️ <b>AI:</b> นักเรียนอย่าลืมพิมพ์คำตอบและอธิบายเหตุผลให้เรียบร้อยก่อนส่งนะครับ'; 
+                fb1.className += ' bg-gray-100 text-gray-700 border border-gray-300';
+            } else if (hasScenario21 && hasScenario24 && reason1Ok) {
+                fb1.innerHTML = `✅ <b>AI วิเคราะห์:</b> สมบูรณ์แบบ! เลือกคำตอบได้ครบถ้วนและให้เหตุผลได้ชัดเจนครับ 🎉
+                <div class="bg-white border-l-4 border-green-500 shadow-sm p-3 rounded-r-lg mt-3 text-gray-800">
+                    <b class="text-green-700 text-sm flex items-center gap-1">📝 แนวคำตอบสำหรับจดบันทึก</b>
+                    <p class="mt-1 text-sm">สถานการณ์ที่ <b>2.1</b> และ <b>2.4</b> ระยะทางและการกระจัดมีค่าเท่ากันพอดี</p>
+                    <p class="text-sm font-medium text-blue-800"><b>เหตุผล:</b> เนื่องจากวัตถุเคลื่อนที่เป็นเส้นตรงมุ่งไปข้างหน้าอย่างเดียว โดยไม่มีการเลี้ยวโค้งหรือเปลี่ยนทิศทางย้อนกลับ</p>
+                </div>`;
+                fb1.className += ' bg-green-50 text-green-800 border border-green-200';
+            } else if ((hasScenario21 && !hasScenario24) || (!hasScenario21 && hasScenario24)) {
+                fb1.innerHTML = '💡 <b>AI วิเคราะห์:</b> เกือบถูกแล้วครับ นักเรียนพบหนึ่งสถานการณ์แล้ว แต่ยังมี "อีก 1 สถานการณ์" ที่ระยะทางเท่ากับการกระจัดเหมือนกัน ลองหาดูใหม่ให้ครบถ้วนนะครับ (คำใบ้: มีทั้งหมด 2 สถานการณ์)'; 
+                fb1.className += ' bg-yellow-50 text-yellow-800 border border-yellow-200';
+            } else if (hasScenario21 && hasScenario24 && !reason1Ok) {
+                fb1.innerHTML = '💡 <b>AI วิเคราะห์:</b> ตอบตัวเลือกสถานการณ์ได้ถูกต้องครบแล้วครับ! แต่ลองเพิ่มคำอธิบายเรื่อง "ลักษณะเส้นทางการเดิน" หรือ "ทิศทาง" อีกนิดนึงครับว่าทำไมมันถึงเท่ากัน?'; 
+                fb1.className += ' bg-yellow-50 text-yellow-800 border border-yellow-200';
+            } else {
+                fb1.innerHTML = '❌ <b>AI วิเคราะห์:</b> ยังไม่ถูกต้องครับ สถานการณ์ที่นักเรียนเลือกมานั้น มีบางช่วงที่คนเดินเลี้ยวหรือเดินย้อน ทำให้ระยะทางมากกว่าการกระจัด ลองสังเกตเส้นแอนิเมชันดูใหม่อีกรอบนะครับ'; 
+                fb1.className += ' bg-red-50 text-red-800 border border-red-200';
+            }
+
+            // --- ตรวจข้อที่ 2 ---
+            let pass2Count = 0;
+            if (a2.includes('2.2')) pass2Count++;
+            if (a2.includes('2.3')) pass2Count++;
+            if (a2.includes('2.5')) pass2Count++;
+            const reason2Ok = (a2.includes('เปลี่ยนทิศ') || a2.includes('กลับ') || a2.includes('เลี้ยว') || a2.includes('ไม่เป็นเส้นตรง') || a2.includes('โค้ง'));
+            
+            fb2.className = 'feedback-box show';
+            if (a2.length < 5) {
+                fb2.innerHTML = '⚠️ <b>AI:</b> กรุณาเขียนคำตอบอธิบายเหตุผลในข้อนี้ก่อนกดตรวจครับ'; 
+                fb2.className += ' bg-gray-100 text-gray-700 border border-gray-300';
+            } else if (pass2Count === 3 && reason2Ok) {
+                fb2.innerHTML = `✅ <b>AI วิเคราะห์:</b> เก่งมาก! วิเคราะห์และจับกลุ่มสถานการณ์ที่ไม่เท่ากันได้ครบทั้ง 3 เงื่อนไขและให้เหตุผลทางฟิสิกส์ได้ถูกต้องแม่นยำ 🎉
+                <div class="bg-white border-l-4 border-green-500 shadow-sm p-3 rounded-r-lg mt-3 text-gray-800">
+                    <b class="text-green-700 text-sm flex items-center gap-1">📝 แนวคำตอบสำหรับจดบันทึก</b>
+                    <p class="mt-1 text-sm">สถานการณ์ที่ <b>2.2, 2.3</b> และ <b>2.5</b> ระยะทางและการกระจัดมีค่าไม่เท่ากัน (โดยระยะทางจะมากกว่าการกระจัดเสมอ)</p>
+                    <p class="text-sm font-medium text-blue-800"><b>เหตุผล:</b> เพราะวัตถุไม่ได้เคลื่อนที่เป็นเส้นตรงตลอดเวลา มีการเปลี่ยนทิศทางการเคลื่อนที่ เช่น เดินย้อนกลับทางเดิม (ข้อ 2.2) เลี้ยวโค้งตั้งฉากไปทางอื่น (ข้อ 2.3) หรือเดินเลี้ยววนครบรอบกลับมาที่เก่า (ข้อ 2.5)</p>
+                </div>`;
+                fb2.className += ' bg-green-50 text-green-800 border border-green-200';
+            } else if (pass2Count > 0 && pass2Count < 3) {
+                fb2.innerHTML = `💡 <b>AI วิเคราะห์:</b> ตอบถูกมาบ้างแล้วครับจำนวน ${pass2Count} สถานการณ์ แต่ยังระบุข้อที่เหลื่อมล้ำไม่เท่ากันไม่ครบถ้วน ลองพิจารณากลุ่มสถานการณ์ที่มีการเลี้ยวโค้งหรือวนกลับให้ครบทั้ง 3 ข้อดูครับ`; 
+                fb2.className += ' bg-yellow-50 text-yellow-800 border border-yellow-200';
+            } else if (pass2Count === 3 && !reason2Ok) {
+                fb2.innerHTML = `💡 <b>AI วิเคราะห์:</b> ระบุหมายเลขสถานการณ์ได้ถูกต้องครบครันแล้วครับ แต่ลืมอธิบายพฤติกรรมการเคลื่อนที่ (การเลี้ยว/การเปลี่ยนทิศ) ของกิตติไปหรือเปล่าเอ่ย? ลองเติมข้อความให้สมบูรณ์อีกนิดครับ`; 
+                fb2.className += ' bg-yellow-50 text-yellow-800 border border-yellow-200';
+            } else {
+                fb2.innerHTML = '❌ <b>AI วิเคราะห์:</b> คำตอบยังไม่ตรงประเด็นครับ ให้สังเกตสถานการณ์ที่ความยาวเส้นทึบสีน้ำเงินยาวกว่าเส้นประลูกศรสีแดง นั่นคือสภาวะที่ตัวแปรทั้งสองได้ค่าไม่เท่ากันครับ'; 
+                fb2.className += ' bg-red-50 text-red-800 border border-red-200';
+            }
+
+            // --- ตรวจข้อที่ 3 ---
+            const ans3Dist = (a3.includes('เส้นทาง') || a3.includes('ทั้งหมด') || a3.includes('จริง') || a3.includes('สเกลาร์'));
+            const ans3Disp = (a3.includes('ตรง') || a3.includes('เริ่มต้น') || a3.includes('สุดท้าย') || a3.includes('ทิศทาง') || a3.includes('เวกเตอร์') || a3.includes('ห่าง'));
+            
+            fb3.className = 'feedback-box show';
+            if (a3.length < 5) {
+                fb3.innerHTML = '⚠️ <b>AI:</b> กรุณาพิมพ์บทสรุปความแตกต่างของสองคำนี้เพื่อนำไปสู่การสรุปผลการทดลองครับ'; 
+                fb3.className += ' bg-gray-100 text-gray-700 border border-gray-300';
+            } else if (ans3Dist && ans3Disp) {
+                fb3.innerHTML = `🌟 <b>AI วิเคราะห์:</b> ยอดเยี่ยมที่สุด! นิยามความแตกต่างของระยะทางและการกระจัดในเชิงปริมาณทางฟิสิกส์ระบุได้อย่างครบถ้วนสมบูรณ์แบบครับ 🎉
+                <div class="bg-white border-l-4 border-green-500 shadow-sm p-3 rounded-r-lg mt-3 text-gray-800">
+                    <b class="text-green-700 text-sm flex items-center gap-1">📝 แนวคำตอบสรุปสาระสำคัญสำหรับจดบันทึก</b>
+                    <ul class="list-disc ml-4 mt-1 text-sm space-y-1.5 text-gray-700">
+                        <li><b>ระยะทาง (Distance - $s$):</b> คือ ความยาวตามเส้นทางที่วัตถุเคลื่อนที่ไปได้จริงทั้งหมด เป็นปริมาณ<b>สเกลาร์</b> (บอกเฉพาะขนาด มีหน่วยเป็นเมตร)</li>
+                        <li><b>การกระจัด (Displacement - $\vec{s}$):</b> คือ ระยะห่างที่สั้นที่สุดในแนวเส้นตรงที่วัดจาก "จุดเริ่มต้น" พุ่งตรงไปยัง "จุดสุดท้าย" ของการเคลื่อนที่ เป็นปริมาณ<b>เวกเตอร์</b> (ต้องระบุทั้งขนาดและทิศทางกำกับเสมอ)</li>
+                    </ul>
+                </div>`; 
+                fb3.className += ' bg-green-50 text-green-800 border border-green-200';
+            } else if (ans3Dist || ans3Disp) {
+                fb3.innerHTML = '💡 <b>AI วิเคราะห์:</b> อธิบายแนวคิดมาได้ดีระดับหนึ่งแล้วครับ แต่อาจจะนิยามขยายความลงลึกสั้นไปนิดนึง ลองเขียนสรุปเปรียบเทียบเทียบเคียงให้เห็นนิยามของทั้ง "ระยะทาง" และ "การกระจัด" สองฝั่งคู่กันให้ครบถ้วนชัดเจนกว่านี้อีกหน่อยครับ'; 
+                fb3.className += ' bg-yellow-50 text-yellow-800 border border-yellow-200';
+            } else {
+                fb3.innerHTML = '❌ <b>AI วิเคราะห์:</b> บทสรุปยังไม่ถูกต้องครับ ลองสังเกตคำอธิบายเพิ่มเติมและกลับไปดูเปรียบเทียบระหว่าง เส้นสีน้ำเงิน (ระยะทางจริง) และ เส้นประหัวลูกศรสีแดง (การกระจัดสั้นสุด) บนกล่องคำใบ้ในโหมดเรียนรู้ดูใหม่นะครับ'; 
+                fb3.className += ' bg-red-50 text-red-800 border border-red-200';
+            }
+        }
+
+        // ฟังก์ชันวาดตัวอย่างสัญลักษณ์ในตารางอธิบายความหมาย (Legend Canvas)
+        function drawVisualLegends() {
+            const ctxDist = document.getElementById('legendDistance').getContext('2d');
+            ctxDist.beginPath(); ctxDist.moveTo(15, 20); ctxDist.bezierCurveTo(35, 0, 55, 40, 80, 20);
+            ctxDist.strokeStyle = '#2563eb'; ctxDist.lineWidth = 4; ctxDist.lineCap = 'round'; ctxDist.stroke();
+            const a1 = Math.atan2(20 - 30, 80 - 70), h1 = 8;
+            ctxDist.beginPath(); ctxDist.moveTo(80, 20);
+            ctxDist.lineTo(80 - h1 * Math.cos(a1 - Math.PI/6), 20 - h1 * Math.sin(a1 - Math.PI/6));
+            ctxDist.lineTo(80 - h1 * Math.cos(a1 + Math.PI/6), 20 - h1 * Math.sin(a1 + Math.PI/6));
+            ctxDist.fillStyle = '#2563eb'; ctxDist.fill();
+
+            const ctxDisp = document.getElementById('legendDisplacement').getContext('2d');
+            ctxDisp.beginPath(); ctxDisp.arc(15, 20, 4, 0, Math.PI * 2); ctxDisp.fillStyle = '#dc2626'; ctxDisp.fill();
+            ctxDisp.beginPath(); ctxDisp.moveTo(15, 20); ctxDisp.lineTo(80, 20);
+            ctxDisp.strokeStyle = '#dc2626'; ctxDisp.lineWidth = 3; ctxDisp.setLineDash([5, 4]); ctxDisp.stroke(); ctxDisp.setLineDash([]);
+            const h2 = 8; ctxDisp.beginPath(); ctxDisp.moveTo(85, 20);
+            ctxDisp.lineTo(85 - h2 * Math.cos(-Math.PI/6), 20 - h2 * Math.sin(-Math.PI/6));
+            ctxDisp.lineTo(85 - h2 * Math.cos(Math.PI/6), 20 - h2 * Math.sin(Math.PI/6));
+            ctxDisp.fillStyle = '#dc2626'; ctxDisp.fill();
+        }
+
+        // สั่งให้ตัวระบบโหลดเริ่มต้นเล่นสถานการณ์ข้อ 2.1 เป็นค่า Default ทันทีเมื่อเปิดหน้าจอ
+        window.onload = function() { playScenario(1); drawVisualLegends(); };
+    </script>
+</body>
+</html>
