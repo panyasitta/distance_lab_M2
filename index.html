@@ -94,12 +94,10 @@
                             <span class="text-xs font-bold text-gray-600 flex items-center gap-1">🎮 แผงควบคุมเครื่องเล่นแอนิเมชัน:</span>
                             <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-gray-200 text-gray-600" id="status-text">รอการเลือก...</span>
                         </div>
-                        <div class="flex gap-2 mb-3">
-                            <button onclick="resumeAnimation()" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-1.5 rounded text-sm font-bold transition flex items-center justify-center gap-1 shadow-sm">
-                                ▶️ เล่น / ทำต่อ
-                            </button>
-                            <button onclick="pauseAnimation()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-1.5 rounded text-sm font-bold transition flex items-center justify-center gap-1 shadow-sm">
-                                ⏸️ หยุดชั่วคราว
+                        
+                        <div class="mb-3">
+                            <button id="play-pause-btn" onclick="toggleAnimation()" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                                ▶️ เล่นแอนิเมชัน
                             </button>
                         </div>
                         
@@ -114,11 +112,11 @@
                     </div>
 
                     <div class="flex flex-col gap-2">
-                        <button onclick="playScenario(1)" id="btn-scen-1" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white"><span class="font-bold text-blue-700">2.1</span> เดินทางจาก A ไปยัง B (20 เมตร)</button>
-                        <button onclick="playScenario(2)" id="btn-scen-2" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white"><span class="font-bold text-blue-700">2.2</span> เดินทางจาก A ไป C แล้วย้อนกลับมา B</button>
-                        <button onclick="playScenario(3)" id="btn-scen-3" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white"><span class="font-bold text-blue-700">2.3</span> เดินทางจาก A ไป C แล้วไปโรงเรียน D</button>
-                        <button onclick="playScenario(4)" id="btn-scen-4" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white"><span class="font-bold text-blue-700">2.4</span> เดินลัดสนามหญ้าจาก A ไป D โดยตรง</button>
-                        <button onclick="playScenario(5)" id="btn-scen-5" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white"><span class="font-bold text-blue-700">2.5</span> เดินรอบบล็อกตึกแล้วกลับมาที่จุด A</button>
+                        <button onclick="playScenario(1)" id="btn-scen-1" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white leading-snug"><span class="font-bold text-blue-700">2.1</span> กิตติเดินไปตามถนนจากตำแหน่ง A ไปยังตู้ไปรษณีย์ที่ตำแหน่ง B</button>
+                        <button onclick="playScenario(2)" id="btn-scen-2" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white leading-snug"><span class="font-bold text-blue-700">2.2</span> กิตติเดินไปตามถนนจากตำแหน่ง A ไปยังท้ายรถโรงเรียนที่ตำแหน่ง C แล้วเดินย้อนกลับมายังตู้ไปรษณีย์ที่ตำแหน่ง B</button>
+                        <button onclick="playScenario(3)" id="btn-scen-3" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white leading-snug"><span class="font-bold text-blue-700">2.3</span> กิตติเดินไปตามถนนจากตำแหน่ง A ไปยังท้ายรถโรงเรียนที่ตำแหน่ง C แล้วเดินต่อไปยังโรงเรียนที่ตำแหน่ง D</button>
+                        <button onclick="playScenario(4)" id="btn-scen-4" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white leading-snug"><span class="font-bold text-blue-700">2.4</span> กิตติเดินลัดสนามหญ้าจากตำแหน่ง A ไปยังตำแหน่ง D</button>
+                        <button onclick="playScenario(5)" id="btn-scen-5" class="scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white leading-snug"><span class="font-bold text-blue-700">2.5</span> กิตติเดินไปตามถนนจากตำแหน่ง A ผ่านตำแหน่ง B C D และ E แล้วเดินกลับมายังตำแหน่งเริ่มต้น</button>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-2 mt-2">
@@ -209,21 +207,27 @@
 
                     <div class="flex flex-col gap-4">
                         <div>
-                            <p class="text-sm font-bold text-gray-800 mb-1">1. จากสถานการณ์ที่กำหนดให้ (2.1 - 2.5) สถานการณ์ใดบ้างที่ระยะทางและการกระจัดมีค่าเท่ากัน? เพราะเหตุใด?</p>
-                            <textarea id="ans1" class="quiz-textarea" placeholder="ตัวอย่างการตอบ: ข้อ 2.x และ 2.y เท่ากัน เพราะว่า..."></textarea>
+                            <p class="text-sm font-bold text-gray-800 mb-1">1. สถานการณ์ใดบ้างที่ระยะทางที่กิตติเคลื่อนที่และระยะห่างจากตำแหน่งเริ่มต้นไปยังตำแหน่งสุดท้ายของกิตติมีค่าเท่ากัน เพราะเหตุใด</p>
+                            <textarea id="ans1" class="quiz-textarea" placeholder="ตัวอย่างการตอบ: ข้อ 2.x และ 2.y มีค่าเท่ากัน เพราะว่า..."></textarea>
                             <div id="fb1" class="feedback-box"></div>
                         </div>
                         
                         <div>
-                            <p class="text-sm font-bold text-gray-800 mb-1">2. สถานการณ์ใดบ้างที่ระยะทางและการกระจัดมีค่าไม่เท่ากัน? เพราะเหตุใด?</p>
+                            <p class="text-sm font-bold text-gray-800 mb-1">2. สถานการณ์ใดบ้างที่ระยะทางที่กิตติเคลื่อนที่และระยะห่างจากตำแหน่งเริ่มต้นไปยังตำแหน่งสุดท้ายของกิตติมีค่าไม่เท่ากัน เพราะเหตุใด</p>
                             <textarea id="ans2" class="quiz-textarea" placeholder="พิมพ์อธิบายเหตุผลและระบุเลขสถานการณ์ให้ครบถ้วน..."></textarea>
                             <div id="fb2" class="feedback-box"></div>
                         </div>
 
                         <div>
-                            <p class="text-sm font-bold text-gray-800 mb-1">3. สรุปแล้ว "ระยะทาง" และ "การกระจัด" มีความแตกต่างกันอย่างไร?</p>
-                            <textarea id="ans3" class="quiz-textarea" placeholder="สรุปใจความสำคัญของนิยามทั้งสองคำแฝงปริมาณสเกลาร์/เวกเตอร์..."></textarea>
+                            <p class="text-sm font-bold text-gray-800 mb-1">3. ระยะทางของการเคลื่อนที่และระยะห่างระหว่างสองตำแหน่งแตกต่างกันอย่างไร</p>
+                            <textarea id="ans3" class="quiz-textarea" placeholder="อธิบายความแตกต่างของทั้งสองปริมาณ..."></textarea>
                             <div id="fb3" class="feedback-box"></div>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-bold text-gray-800 mb-1">4. จากกิจกรรมสรุปได้ว่าอย่างไร</p>
+                            <textarea id="ans4" class="quiz-textarea" placeholder="สรุปความสัมพันธ์หรือข้อค้นพบที่ได้จากกิจกรรมนี้..."></textarea>
+                            <div id="fb4" class="feedback-box"></div>
                         </div>
                     </div>
 
@@ -271,12 +275,13 @@
         let userDistancePoints = []; 
         let userDisplacement = { start: null, end: null };
 
+        // อัปเดตข้อความในกล่องวิเคราะห์ผล (desc) ให้ตรงกับบริบทกิตติ
         const scenarios = {
-            1: { path: [locations.A, locations.B], desc: "<b>วิเคราะห์ผล (2.1):</b> เดินเป็นเส้นตรงจาก A ไปทิศตะวันออกถึงจุด B ระยะทางเท่ากับ 20 เมตร และความยาวเส้นตรงที่เชื่อมจุดแรกถึงจุดท้าย (การกระจัด) ก็เท่ากับ 20 เมตรเช่นกัน เนื่องจากเคลื่อนที่เป็นเส้นตรงโดยไม่เปลี่ยนทิศทางเลย" },
-            2: { path: [locations.A, locations.C, locations.B], desc: "<b>วิเคราะห์ผล (2.2):</b> เดินไปทางตะวันออกจนถึงจุด C (50 เมตร) แล้วเดินย้อนกลับมาทางตะวันตกถึงจุด B (30 เมตร) <br>• ระยะทางทั้งหมด = 50 + 30 = 80 เมตร<br>• การกระจัดลากตรงจากเริ่ม (A) ไปจบ (B) = 20 เมตร ทิศตะวันออก (ค่าไม่เท่ากันเพราะมีการเคลื่อนที่ย้อนกลับ)" },
-            3: { path: [locations.A, locations.C, locations.D], desc: "<b>วิเคราะห์ผล (2.3):</b> เดินตามถนนไปทางตะวันออกถึงจุด C (50 เมตร) แล้วเลี้ยวขึ้นเหนือไปโรงเรียนจุด D (50 เมตร)<br>• ระยะทางทั้งหมด = 50 + 50 = 100 เมตร<br>• การกระจัดวัดตามแนวเส้นทแยงมุมตรงดิ่งพุ่งจาก A ➔ D มีขนาดประมาณ 70.7 เมตร ทิศตะวันออกเฉียงเหนือ" },
-            4: { path: [locations.A, locations.D], desc: "<b>วิเคราะห์ผล (2.4):</b> เดินลัดสนามหญ้าตัดตรงจากต้นทาง A มุ่งตรงไปยังโรงเรียนจุด D ทันที เส้นทางเดินจริงเป็นเส้นตรงผ่ากลางสนาม ทำให้ระยะทางมีค่าเท่ากับการกระจัดพอดี คือประมาณ 70.7 เมตร" },
-            5: { path: [locations.A, locations.B, locations.C, locations.D, locations.E, locations.A], desc: "<b>วิเคราะห์ผล (2.5):</b> เดินอ้อมตามบล็อกถนนสี่เหลี่ยมรอบสนามหญ้า ผ่านตู้ไปรษณีย์ ที่จอดรถ โรงเรียน ไฟแดง แล้ววนกลับมาถึงบ้านจุด A ตามเดิม<br>• ระยะทางรอบตึกรวม = 200 เมตร<br>• การกระจัด = 0 เมตร! เนื่องจากจุดสุดท้ายวนกลับมาซ้อนทับอยู่ที่จุดเริ่มต้นพอดีเป๊ะ" }
+            1: { path: [locations.A, locations.B], desc: "<b>วิเคราะห์ผล (2.1):</b> กิตติเดินไปตามถนนจากตำแหน่ง A ไปยังตู้ไปรษณีย์ที่ตำแหน่ง B <br>• ระยะทางเดินจริง = 20 เมตร<br>• การกระจัด (ลากตรงจาก A ➔ B) = 20 เมตร ทิศตะวันออก (ค่าเท่ากันเพราะเดินเป็นเส้นตรงไม่เปลี่ยนทิศทาง)" },
+            2: { path: [locations.A, locations.C, locations.B], desc: "<b>วิเคราะห์ผล (2.2):</b> กิตติเดินไปตามถนนจากตำแหน่ง A ไปยังท้ายรถโรงเรียนที่ตำแหน่ง C (50 ม.) แล้วย้อนกลับมาตู้ไปรษณีย์ตำแหน่ง B (30 ม.) <br>• ระยะทางทั้งหมด = 50 + 30 = 80 เมตร<br>• การกระจัด (ลากตรงจาก A ➔ B) = 20 เมตร ทิศตะวันออก (ค่าไม่เท่ากันเพราะมีการเคลื่อนที่ย้อนกลับ)" },
+            3: { path: [locations.A, locations.C, locations.D], desc: "<b>วิเคราะห์ผล (2.3):</b> กิตติเดินไปตามถนนจากตำแหน่ง A ไปยังท้ายรถโรงเรียนที่ตำแหน่ง C (50 ม.) แล้วเดินต่อไปยังโรงเรียนที่ตำแหน่ง D (50 ม.)<br>• ระยะทางทั้งหมด = 50 + 50 = 100 เมตร<br>• การกระจัดวัดตามแนวเส้นทแยงมุมตรงดิ่งพุ่งจาก A ➔ D มีขนาดประมาณ 70.7 เมตร ทิศตะวันออกเฉียงเหนือ" },
+            4: { path: [locations.A, locations.D], desc: "<b>วิเคราะห์ผล (2.4):</b> กิตติเดินลัดสนามหญ้าจากตำแหน่ง A ไปยังตำแหน่ง D โดยตรง<br>เส้นทางเดินจริงเป็นเส้นตรงผ่ากลางสนาม ทำให้ระยะทางมีค่าเท่ากับการกระจัดพอดี คือประมาณ 70.7 เมตร" },
+            5: { path: [locations.A, locations.B, locations.C, locations.D, locations.E, locations.A], desc: "<b>วิเคราะห์ผล (2.5):</b> กิตติเดินไปตามถนนจากตำแหน่ง A ผ่านตำแหน่ง B C D และ E แล้วเดินกลับมายังตำแหน่งเริ่มต้น<br>• ระยะทางรอบตึกรวม = 200 เมตร<br>• การกระจัด = 0 เมตร! เนื่องจากจุดสุดท้ายวนกลับมาซ้อนทับอยู่ที่จุดเริ่มต้นพอดีเป๊ะ" }
         };
 
         function getScreenX(gridX) { return originX + gridX * gridSize; }
@@ -312,7 +317,7 @@
                 hint.innerText = "📍 เลือกรันสถานการณ์เพื่อดูแอนิเมชันคำนวณเวกเตอร์";
                 resetDemoAnimation();
                 document.getElementById('analysis-box').innerHTML = "เลือกสถานการณ์ด้านบนเพื่อรันตัวจำลองเส้นทางและดูคำอธิบายวิเคราะห์ผลลัพธ์...";
-                document.querySelectorAll('.scen-btn').forEach(btn => btn.className = "scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white");
+                document.querySelectorAll('.scen-btn').forEach(btn => btn.className = "scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white leading-snug");
             } else if (tab === 'draw') {
                 document.getElementById('visual-legend').style.display = 'block';
                 hint.innerText = "📍 ระบบดูดติดพิกัด (Snap Grid) อัตโนมัติเมื่อแตะ/คลิกใกล้โหนด";
@@ -403,7 +408,7 @@
             mctx.closePath(); mctx.fillStyle = color; mctx.fill(); mctx.restore();
         }
 
-        // --- ส่วนที่ 4: แอนิเมชันสาธิต (Demo Mode) แผงควบคุม Manual Start ---
+        // --- ส่วนที่ 4: แอนิเมชันสาธิต (Demo Mode) แผงควบคุม Manual Start (Toggle Play/Pause) ---
         function setPlaySpeed(speed) {
             playbackSpeed = speed;
             document.querySelectorAll('.speed-btn').forEach(btn => btn.className = "speed-btn py-1 text-xs border rounded-lg font-bold bg-white text-gray-700");
@@ -422,30 +427,40 @@
             document.getElementById('dist-display').innerHTML = "0.0 <span class='text-xs font-normal'>ม.</span>";
             document.getElementById('disp-display').innerHTML = "0.0 <span class='text-xs font-normal'>ม.</span>";
             updateStatusText("รอการเลือก...", "bg-gray-200 text-gray-600");
+            
+            const btn = document.getElementById('play-pause-btn');
+            if(btn) {
+                btn.innerHTML = "▶️ เล่นแอนิเมชัน";
+                btn.className = "w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm";
+            }
+            
             drawSimulationMap();
         }
 
-        function pauseAnimation() {
-            if (!currentScenarioId || animProgress >= 1) return;
-            isPaused = true;
-            stopAnimation();
-            updateStatusText("หยุดชั่วคราว", "bg-amber-100 text-amber-700");
-        }
-
-        function resumeAnimation() {
+        function toggleAnimation() {
             if (!currentScenarioId) {
                 alert("กรุณาคลิกเลือกสถานการณ์ (2.1 - 2.5) ด้านล่างก่อนกดเล่นครับ");
                 return;
             }
-            if (!isPaused && animProgress > 0 && animProgress < 1) return; 
 
-            if (animProgress >= 1) {
-                animProgress = 0; 
+            const btn = document.getElementById('play-pause-btn');
+
+            if (isPaused) {
+                if (animProgress >= 1) {
+                    animProgress = 0; 
+                }
+                isPaused = false;
+                updateStatusText("กำลังเล่น...", "bg-green-100 text-green-700");
+                btn.innerHTML = "⏸️ หยุดชั่วคราว";
+                btn.className = "w-full bg-amber-500 hover:bg-amber-600 text-white py-2 rounded text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm";
+                animateDemo();
+            } else {
+                isPaused = true;
+                stopAnimation();
+                updateStatusText("หยุดชั่วคราว", "bg-amber-100 text-amber-700");
+                btn.innerHTML = "▶️ เล่นต่อ";
+                btn.className = "w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm";
             }
-            
-            isPaused = false;
-            updateStatusText("กำลังเล่น...", "bg-green-100 text-green-700");
-            animateDemo();
         }
 
         function playScenario(id) {
@@ -455,8 +470,14 @@
             animProgress = 0; 
             updateStatusText("รอการเล่น", "bg-gray-200 text-gray-600");
 
-            document.querySelectorAll('.scen-btn').forEach(btn => btn.className = "scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white");
-            document.getElementById(`btn-scen-${id}`).className = "scen-btn text-left px-4 py-2 border rounded-lg text-sm transition bg-blue-600 text-white font-semibold";
+            const btn = document.getElementById('play-pause-btn');
+            if(btn) {
+                btn.innerHTML = "▶️ เล่นแอนิเมชัน";
+                btn.className = "w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm";
+            }
+
+            document.querySelectorAll('.scen-btn').forEach(btn => btn.className = "scen-btn text-left px-4 py-2 border rounded-lg text-sm hover:bg-blue-50 transition bg-white leading-snug");
+            document.getElementById(`btn-scen-${id}`).className = "scen-btn text-left px-4 py-2 border rounded-lg text-sm transition bg-blue-600 text-white font-semibold leading-snug";
             
             const sc = scenarios[id];
             animSegments = []; animTotalUnits = 0;
@@ -482,7 +503,13 @@
             animProgress += 0.008 * playbackSpeed;
             if (animProgress >= 1) {
                 animProgress = 1;
+                isPaused = true; 
                 updateStatusText("สิ้นสุด", "bg-blue-100 text-blue-700");
+                const btn = document.getElementById('play-pause-btn');
+                if(btn) {
+                    btn.innerHTML = "🔄 เล่นซ้ำ";
+                    btn.className = "w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm";
+                }
             }
             
             drawSimulationMap();
@@ -556,7 +583,6 @@
         }
 
         // --- ส่วนที่ 6: ระบบดักจับพิกัดเมาส์และการสัมผัส (Responsive Touch & Hover) ---
-        // ใช้คำสั่ง 'pointer' แทน mouse/touch รองรับทั้ง เมาส์ นิ้ว และปากกา ในคำสั่งเดียว แก้ปัญหาชดเชย Scale ได้แม่นยำ
         canvas.addEventListener('pointermove', (e) => {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -855,39 +881,51 @@
             }
         }
 
-        // --- ส่วนที่ 7: ระบบ AI ตรวจประเมินคำตอบอัตโนมัติ (AI Assessment Engine) ---
+        // --- ส่วนที่ 7: ระบบ AI ตรวจประเมินคำตอบอัตโนมัติ (AI Assessment Engine) อัปเดตคำถามทั้ง 4 ข้อ ---
         function evaluateAnswers() {
             const ans1 = document.getElementById('ans1').value.trim();
             const ans2 = document.getElementById('ans2').value.trim();
             const ans3 = document.getElementById('ans3').value.trim();
+            const ans4 = document.getElementById('ans4').value.trim();
 
-            if (!ans1 || !ans2 || !ans3) {
-                alert('⚠️ แจ้งเตือนจาก AI: กรุณาพิมพ์คำตอบให้ครบถ้วนทั้ง 3 ช่องคำถามก่อนส่งตรวจครับ');
+            if (!ans1 || !ans2 || !ans3 || !ans4) {
+                alert('⚠️ แจ้งเตือนจาก AI: กรุณาพิมพ์คำตอบให้ครบถ้วนทั้ง 4 ช่องคำถามก่อนส่งตรวจครับ');
                 return;
             }
 
             const checkKeywords = (text, keywords) => keywords.some(kw => text.includes(kw));
 
+            // ตรวจข้อ 1
             const fb1 = document.getElementById('fb1');
             const pass1 = checkKeywords(ans1, ['2.1', '2.4', '1', '4']) && checkKeywords(ans1, ['ตรง', 'ไม่เปลี่ยน', 'ทางเดียว']);
             fb1.className = `feedback-box show mt-2 p-3 rounded-lg border text-sm ${pass1 ? 'bg-green-50 border-green-200 text-green-900' : 'bg-red-50 border-red-200 text-red-900'}`;
             fb1.innerHTML = pass1 
-                ? `<b>✅ ประเด็นถูกต้อง:</b> เยี่ยมมากครับ! สถานการณ์ 2.1 และ 2.4 ระยะทางจะเท่ากับการกระจัด เนื่องจากเป็นการเคลื่อนที่เป็นเส้นตรงและไม่มีการเปลี่ยนทิศทาง`
-                : `<b>❌ ลองดูอีกนิด:</b> คำตอบควรมีสถานการณ์ "2.1" และ "2.4" พร้อมระบุเหตุผลว่าเพราะเคลื่อนที่เป็น "เส้นตรง" ไม่เปลี่ยนทิศทางครับ`;
+                ? `<b>✅ ประเด็นถูกต้อง:</b> เยี่ยมมากครับ! สถานการณ์ 2.1 และ 2.4 มีค่าเท่ากัน เนื่องจากกิตติเดินเป็นเส้นตรงและไม่มีการเปลี่ยนทิศทาง`
+                : `<b>❌ ลองดูอีกนิด:</b> คำตอบควรมีสถานการณ์ "2.1" และ "2.4" พร้อมระบุเหตุผลว่าเพราะกิตติเดินเป็น "เส้นตรง" ไม่เปลี่ยนทิศทางครับ`;
 
+            // ตรวจข้อ 2
             const fb2 = document.getElementById('fb2');
-            const pass2 = checkKeywords(ans2, ['2.2', '2.3', '2.5', '2', '3', '5']) && checkKeywords(ans2, ['เลี้ยว', 'ย้อน', 'ทิศ', 'โค้ง', 'วน']);
+            const pass2 = checkKeywords(ans2, ['2.2', '2.3', '2.5', '2', '3', '5']) && checkKeywords(ans2, ['เลี้ยว', 'ย้อน', 'ทิศ', 'โค้ง', 'วน', 'เปลี่ยน']);
             fb2.className = `feedback-box show mt-2 p-3 rounded-lg border text-sm ${pass2 ? 'bg-green-50 border-green-200 text-green-900' : 'bg-red-50 border-red-200 text-red-900'}`;
             fb2.innerHTML = pass2
-                ? `<b>✅ ประเด็นถูกต้อง:</b> ถูกต้องเลย! สถานการณ์ 2.2, 2.3 และ 2.5 มีค่าไม่เท่ากันเพราะมีการเปลี่ยนทิศทาง (เลี้ยว หรือ เดินย้อนกลับ)`
+                ? `<b>✅ ประเด็นถูกต้อง:</b> ถูกต้องเลย! สถานการณ์ 2.2, 2.3 และ 2.5 มีค่าไม่เท่ากันเพราะกิตติมีการเปลี่ยนทิศทาง (เลี้ยว หรือ เดินย้อนกลับ)`
                 : `<b>❌ ลองดูอีกนิด:</b> สถานการณ์ที่เหลือคือ "2.2", "2.3" และ "2.5" โดยสาเหตุหลักคือมีเส้นทางการเดินที่ "เปลี่ยนทิศทาง" หรือ "เลี้ยว" ครับ`;
 
+            // ตรวจข้อ 3
             const fb3 = document.getElementById('fb3');
-            const pass3 = checkKeywords(ans3, ['สเกลาร์', 'เวกเตอร์']) || (checkKeywords(ans3, ['ทั้งหมด', 'จริง']) && checkKeywords(ans3, ['เริ่ม', 'ท้าย', 'ตรง', 'กระจัด']));
+            const pass3 = checkKeywords(ans3, ['สเกลาร์', 'เวกเตอร์']) || (checkKeywords(ans3, ['ทั้งหมด', 'จริง', 'เดิน']) && checkKeywords(ans3, ['เริ่ม', 'ท้าย', 'ตรง', 'กระจัด', 'ห่าง']));
             fb3.className = `feedback-box show mt-2 p-3 rounded-lg border text-sm ${pass3 ? 'bg-green-50 border-green-200 text-green-900' : 'bg-red-50 border-red-200 text-red-900'}`;
             fb3.innerHTML = pass3
-                ? `<b>✅ วิเคราะห์ได้ยอดเยี่ยม:</b> สรุปได้ถูกต้องครับ! <b>ระยะทาง</b> วัดความยาวตามเส้นทางจริง (ปริมาณสเกลาร์) ส่วน <b>การกระจัด</b> วัดเป็นเส้นตรงจากจุดเริ่มถึงสิ้นสุด (ปริมาณเวกเตอร์)`
-                : `<b>❌ ลองดูอีกนิด:</b> อย่าลืมระบุว่า "ระยะทาง" คือระยะตามที่เดินจริงทั้งหมด ส่วน "การกระจัด" คือระยะทางเส้นตรงที่ลากจากจุดเริ่มต้นไปจุดสุดท้ายเสมอครับ`;
+                ? `<b>✅ วิเคราะห์ความแตกต่างได้ชัดเจน:</b> ถูกต้องครับ! <b>ระยะทาง</b> คือความยาวตามเส้นทางที่เดินจริงทั้งหมด ส่วน <b>ระยะห่างระหว่างสองตำแหน่ง (การกระจัด)</b> คือความยาวของเส้นตรงที่ลากจากจุดเริ่มต้นไปยังจุดสุดท้าย`
+                : `<b>❌ ลองดูอีกนิด:</b> ควรระบุว่า "ระยะทาง" คือระยะตามเส้นทางที่เดินจริงทั้งหมด ส่วน "ระยะห่าง" (การกระจัด) สนใจแค่เส้นตรงจากจุดเริ่มต้นไปยังจุดสุดท้ายครับ`;
+
+            // ตรวจข้อ 4
+            const fb4 = document.getElementById('fb4');
+            const pass4 = checkKeywords(ans4, ['ระยะทาง']) && (checkKeywords(ans4, ['เส้นตรง', 'ไม่เปลี่ยนทิศ']) || checkKeywords(ans4, ['มากกว่า', 'เท่ากับ', 'สั้นที่สุด', 'การกระจัด', 'ระยะห่าง']));
+            fb4.className = `feedback-box show mt-2 p-3 rounded-lg border text-sm ${pass4 ? 'bg-green-50 border-green-200 text-green-900' : 'bg-red-50 border-red-200 text-red-900'}`;
+            fb4.innerHTML = pass4
+                ? `<b>✅ สรุปหลักการได้ยอดเยี่ยม:</b> ครบถ้วนครับ! สามารถสรุปได้ว่า "ระยะทาง" จะมีค่ามากกว่าหรือเท่ากับ "ระยะห่าง (การกระจัด)" เสมอ โดยจะมีค่าเท่ากันก็ต่อเมื่อเคลื่อนที่เป็นเส้นตรงและไม่เปลี่ยนทิศทางเท่านั้น`
+                : `<b>❌ ลองเพิ่มประเด็นสรุปอีกนิด:</b> ลองสรุปความสัมพันธ์ของทั้งสองปริมาณดูครับ เช่น "ระยะทางจะมีค่าเท่ากับระยะห่าง ก็ต่อเมื่อเคลื่อนที่เป็นเส้นตรงและไม่เปลี่ยนทิศทาง"`;
         }
 
         // --- ส่วนที่ 8: วาดกราฟิกตัวอย่างในป้ายสัญลักษณ์ ---
